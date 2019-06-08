@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 #######################################################
 #                                                     #
 # This is a ocserv installation for CentOS 7 and 6    #
@@ -6,12 +6,14 @@
 # Author: haolong,zcm8483@gmail.com                   #
 # Website: https://github.com/chendong12/ocserv       #
 #                                                     #
-####################################################
-#
-#检测是否是root用户
+#######################################################
+
+# 检测是否是root用户
 function check_root(){
 	[[ $EUID != 0 ]] && echo -e "${Error} 当前账号非ROOT(或没有ROOT权限)，无法继续操作，请使用${Green_background_prefix} sudo su ${Font_color_suffix}来获取临时ROOT权限（执行后会提示输入当前账号的密码）。" && exit 1
 }
+
+# 检查系统版本
 function check_sys(){
 	if [[ -f /etc/redhat-release ]]; then
 		release="centos"
@@ -27,8 +29,10 @@ function check_sys(){
 		release="ubuntu"
 	elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
 		release="centos"
-    fi
+	fi
 }
+
+# 系统清理
 function sys_clean(){
 	yum remove ocserv httpd mariadb-server freeradius freeradius-mysql freeradius-utils -y
 	rm -rf /var/www/html/*.p12
@@ -50,18 +54,32 @@ function sys_clean(){
 	sed -i '/iptables -A INPUT -p icmp -j ACCEPT/d' /etc/rc.d/rc.local
 	sed -i '/iptables -A INPUT -p tcp --dport 22 -j ACCEPT/d' /etc/rc.d/rc.local
 	sed -i '/iptables -I INPUT -p tcp --dport 80 -j ACCEPT/d' /etc/rc.d/rc.local
-	sed -i '/iptables -A INPUT -p tcp --dport 4433 -j ACCEPT/d' /etc/rc.d/rc.local
-	sed -i '/iptables -A INPUT -p udp --dport 4433 -j ACCEPT/d' /etc/rc.d/rc.local
+	sed -i '/iptables -A INPUT -p tcp --dport 443 -j ACCEPT/d' /etc/rc.d/rc.local
+	sed -i '/iptables -A INPUT -p udp --dport 443 -j ACCEPT/d' /etc/rc.d/rc.local
 	sed -i '/iptables -A INPUT -j DROP/d' /etc/rc.d/rc.local
 	sed -i '/iptables -t nat -F/d' /etc/rc.d/rc.local
 	sed -i '/iptables -t nat -A POSTROUTING -s 10.12.0.0\/24 -o eth0 -j MASQUERADE/d' /etc/rc.d/rc.local
-	sed -i '/#自动调整mtu，ocserv服务器使用/d' /etc/rc.d/rc.local
+	sed -i '/# 自动调整mtu，ocserv服务器使用/d' /etc/rc.d/rc.local
 	sed -i '/iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu/d' /etc/rc.d/rc.local
 	sed -i '/systemctl start mariadb/d' /etc/rc.d/rc.local
 	sed -i '/systemctl start httpd/d' /etc/rc.d/rc.local
 	sed -i '/systemctl start radiusd/d' /etc/rc.d/rc.local
 	sed -i '/iptables -I INPUT -p tcp --dport 9090 -j ACCEPT/d' /etc/rc.d/rc.local
 }
+
+function centos0_pre(){
+	# 防止后面找不到ocserv
+	yum install -y epel-release
+	sed -i "s/^#baseurl/baseurl/" /etc/yum.repos.d/epel.repo
+	sed -i "s/^metalink/#metalink/" /etc/yum.repos.d/epel.repo
+	yum clean all && yum makecache fast
+	yum install -y yum-utils
+	# 防止后面出现“发现 22 个已存在的 RPM 数据库问题”错误
+	package-cleanup --cleandupes
+	# 有的系统上没有安装iptables
+	yum install -y iptables-services
+}
+
 function centos1_ntp(){
 	setenforce 0
 	sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" /etc/selinux/config
@@ -75,18 +93,19 @@ function centos1_ntp(){
 	yum install net-tools -y
 	yum install epel-release -y
 	systemctl stop firewalld
-    systemctl disable firewalld
-    yum install lynx wget expect iptables -y
+	systemctl disable firewalld
+	yum install lynx wget expect iptables -y
 }
+
 function centos2_ocserv(){
-yum install ocserv httpd -y
-mkdir /root/anyconnect
-cd /root/anyconnect
-#生成 CA 证书
-certtool --generate-privkey --outfile ca-key.pem
-cat >ca.tmpl <<EOF
-cn = "HY Annyconnect CA"
-organization = "HUAYU"
+	yum install ocserv httpd -y
+	mkdir /root/anyconnect
+	cd /root/anyconnect
+	# 生成 CA 证书
+	certtool --generate-privkey --outfile ca-key.pem
+	cat >ca.tmpl <<EOF
+cn = "Test CA"
+organization = "Test Org"
 serial = 1
 expiration_days = 3650
 ca
@@ -94,55 +113,57 @@ signing_key
 cert_signing_key
 crl_signing_key
 EOF
-certtool --generate-self-signed --load-privkey ca-key.pem --template ca.tmpl --outfile ca-cert.pem
-cp ca-cert.pem /etc/ocserv/
-#生成本地服务器证书
-certtool --generate-privkey --outfile server-key.pem
-cat >server.tmpl <<EOF
-cn = "HY Annyconnect CA"
-organization = "HUAYU"
+	certtool --generate-self-signed --load-privkey ca-key.pem --template ca.tmpl --outfile ca-cert.pem
+	cp ca-cert.pem /etc/ocserv/
+	# 生成本地服务器证书
+	certtool --generate-privkey --outfile server-key.pem
+	cat >server.tmpl <<EOF
+cn = "Test CA"
+organization = "Test Org"
 serial = 2
 expiration_days = 3650
 encryption_key
 signing_key
 tls_www_server
 EOF
-certtool --generate-certificate --load-privkey server-key.pem \
---load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem \
---template server.tmpl --outfile server-cert.pem
-cp server-cert.pem /etc/ocserv/
-cp server-key.pem /etc/ocserv/
-#生成证书注销文件
-cd /root/anyconnect/
-touch /root/anyconnect/revoked.pem
-cd /root/anyconnect/
-cat << _EOF_ >crl.tmpl
+	certtool --generate-certificate --load-privkey server-key.pem \
+	--load-ca-certificate ca-cert.pem --load-ca-privkey ca-key.pem \
+	--template server.tmpl --outfile server-cert.pem
+	cp server-cert.pem /etc/ocserv/
+	cp server-key.pem /etc/ocserv/
+	# 生成证书注销文件
+	cd /root/anyconnect/
+	touch /root/anyconnect/revoked.pem
+	cd /root/anyconnect/
+	cat << _EOF_ >crl.tmpl
 crl_next_update = 365
 crl_number = 1
 _EOF_
-certtool --generate-crl --load-ca-privkey ca-key.pem \
-           --load-ca-certificate ca-cert.pem \
-           --template crl.tmpl --outfile crl.pem
-#配置 ocserv
-cd /etc/ocserv/
-rm -rf ocserv.conf
-wget https://raw.githubusercontent.com/chendong12/ocserv/master/ocserv.conf
-#
-cd /root/anyconnect
-wget https://raw.githubusercontent.com/chendong12/ocserv/master/gen-client-cert.sh
-wget https://raw.githubusercontent.com/chendong12/ocserv/master/user_add.sh
-wget https://raw.githubusercontent.com/chendong12/ocserv/master/user_del.sh
-chmod +x gen-client-cert.sh
-chmod +x user_add.sh
-chmod +x user_del.sh
+	certtool --generate-crl --load-ca-privkey ca-key.pem \
+	         --load-ca-certificate ca-cert.pem \
+	         --template crl.tmpl --outfile crl.pem
+	# 配置ocserv
+	cd /etc/ocserv/
+	rm -rf ocserv.conf
+	wget https://raw.githubusercontent.com/chendong12/ocserv/master/ocserv.conf
+	# 获取其他脚本
+	cd /root/anyconnect
+	wget https://raw.githubusercontent.com/chendong12/ocserv/master/gen-client-cert.sh
+	wget https://raw.githubusercontent.com/chendong12/ocserv/master/user_add.sh
+	wget https://raw.githubusercontent.com/chendong12/ocserv/master/user_del.sh
+	chmod +x gen-client-cert.sh
+	chmod +x user_add.sh
+	chmod +x user_del.sh
+	./user_add.sh
 }
+
 centos3_iptables(){
-echo 1 > /proc/sys/net/ipv4/ip_forward
-echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
-sysctl -p
-service iptables start
-chmod +x /etc/rc.d/rc.local
-cat >>  /etc/rc.d/rc.local <<EOF
+	echo 1 > /proc/sys/net/ipv4/ip_forward
+	echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
+	sysctl -p
+	service iptables start
+	chmod +x /etc/rc.d/rc.local
+	cat >> /etc/rc.d/rc.local <<EOF
 service ocserv start
 service iptables start
 service httpd start
@@ -153,29 +174,34 @@ iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 iptables -A INPUT -p icmp -j ACCEPT
 iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 iptables -I INPUT -p tcp --dport 80 -j ACCEPT
-iptables -A INPUT -p tcp --dport 4433 -j ACCEPT
-iptables -A INPUT -p udp --dport 4433 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -p udp --dport 443 -j ACCEPT
 iptables -A INPUT -j DROP
 iptables -t nat -F
 iptables -t nat -A POSTROUTING -s 10.12.0.0/24 -o eth0 -j MASQUERADE
-#自动调整mtu，ocserv服务器使用
+# 自动调整mtu，ocserv服务器使用
 iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 EOF
-reboot
+	echo 'reboot'
+	reboot
 }
+
 function centos_install(){
-sys_clean
-centos1_ntp
-centos2_ocserv
-centos3_iptables
+	sys_clean
+	centos0_pre
+	centos1_ntp
+	centos2_ocserv
+	centos3_iptables
 }
+
 function shell_install() {
-check_root
-check_sys
+	check_root
+	check_sys
 	if [[ ${release} == "centos" ]]; then
 		centos_install
 	else
-		echo "您的操作系统不是Cenos，请更换操作系统之后再试"  && exit 1
+		echo "您的操作系统不是Cenos，请更换操作系统之后再试" && exit 1
 	fi
 }
+
 shell_install
