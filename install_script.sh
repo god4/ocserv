@@ -145,12 +145,12 @@ _EOF_
 	# 配置ocserv
 	cd /etc/ocserv/
 	rm -rf ocserv.conf
-	wget https://raw.githubusercontent.com/chendong12/ocserv/master/ocserv.conf
+	wget https://raw.githubusercontent.com/god4/ocserv/master/ocserv.conf
 	# 获取其他脚本
 	cd /root/anyconnect
-	wget https://raw.githubusercontent.com/chendong12/ocserv/master/gen-client-cert.sh
-	wget https://raw.githubusercontent.com/chendong12/ocserv/master/user_add.sh
-	wget https://raw.githubusercontent.com/chendong12/ocserv/master/user_del.sh
+	wget https://raw.githubusercontent.com/god4/ocserv/master/gen-client-cert.sh
+	wget https://raw.githubusercontent.com/god4/ocserv/master/user_add.sh
+	wget https://raw.githubusercontent.com/god4/ocserv/master/user_del.sh
 	chmod +x gen-client-cert.sh
 	chmod +x user_add.sh
 	chmod +x user_del.sh

@@ -1,7 +1,9 @@
 ## Cisco anyconnect 服务器搭建（服务器软件采用ocserv）注意本项目是基于Centos7操作系统
 ### 安装步骤 ###
-> * 安装ocserv 服务器，请使用下面的脚本文件进行安装
-> * https://raw.githubusercontent.com/chendong12/ocserv/master/ocserv_quick.sh
+> * 安装ocserv 服务器，请使用下面的命令进行安装
+>> *   wget https://raw.githubusercontent.com/god4/ocserv/master/install_script.sh
+>> *   chmod +x install_script.sh
+>> *   ./install_script.sh
 > * 使用Radius来管理ocserv 服务器中的账号，即OCSERV对接Radius，请使用下面的脚本文件进行安装
 > * https://github.com/chendong12/ocserv/blob/master/ocserv_radius_quickinstall.sh
 ## 服务器操作常用方法 ##
@@ -35,4 +37,3 @@
 > * https://youtu.be/EkEwg9gN5Eg
 > * 服务器安装SSL证书教程
 > * https://youtu.be/Y2GVdVq80Ds
-
