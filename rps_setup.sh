@@ -73,7 +73,7 @@ sed -i "s/\/var\/www\/html/\/D\/www/g" /D/www/cgib/up.pl
 chmod +x /D/www/cgib/up.pl
 
 chmod +777 /D/www
-chcon -R -t httpd_sys_rw_content_t /D/www
+chcon -R -t httpd_sys_rw_content_t /D/www 2>/dev/null
 
 service httpd stop
 service httpd start
@@ -82,6 +82,7 @@ iptables -I INPUT -p tcp --dport 80 -j ACCEPT
 firewall-cmd --zone=public --add-port=80/tcp --permanent
 
 # 重启
+echo "iptables -I INPUT -p tcp --dport 8000 -j ACCEPT" >> /etc/rc.d/rc.local
 echo "Setup completed successfully"
 echo "reboot"
 reboot
