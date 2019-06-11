@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 #######################################################
 #                                                     #
 # This is a ocserv installation for CentOS 7 and 6    #
