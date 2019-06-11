@@ -28,7 +28,24 @@ cat >> /etc/fstab <<EOF
 /dev/sdb1 /D
 EOF
 
+# 安装Cloud Torrent
+echo "installing Cloud Torrent"
+wget -N --no-check-certificate https://www.xuanlove.download/sh/cloudt.sh
+chmod +x cloudt.sh
+./cloudt.sh
+
+mkdir /D/cloudt
+sed -i "s/\/etc\/cloudtorrent\/downloads/\/D\/cloudt/g" /etc/cloudtorrent/cloud-torrent.json
+sed -i "s/\"EnableUpload\": true,/\"EnableUpload\": false,/g" /etc/cloudtorrent/cloud-torrent.json
+
+echo "/etc/cloudtorrent/cloud-torrent -p 8000 -l -a ct:passwd -c /etc/cloudtorrent/cloud-torrent.json>> /etc/cloudtorrent/ct.log 2>&1 &" >> /etc/rc.d/rc.local
+chmod +x /etc/rc.d/rc.local
+
+iptables -I INPUT -p tcp --dport 8000 -j ACCEPT
+firewall-cmd --zone=public --add-port=8000/tcp --permanent
+
 # 安装OpenConnect
+echo "installing OpenConnect"
 wget https://raw.githubusercontent.com/god4/ocserv/master/install_script.sh
 sed -i "s/reboot/#reboot/" install_script.sh
 sed -i "s/echo '#reboot'/echo 'completed'/" install_script.sh
@@ -38,6 +55,7 @@ chmod +x install_script.sh
 mv install_script.sh anyconnect/
 
 # 配置Apache httpd
+echo "configuring Apache Web Server"
 yum install -y perl-CGI
 
 mkdir /D/www
@@ -63,21 +81,7 @@ service httpd start
 iptables -I INPUT -p tcp --dport 80 -j ACCEPT
 firewall-cmd --zone=public --add-port=80/tcp --permanent
 
-# 安装Cloud Torrent
-wget -N --no-check-certificate https://www.xuanlove.download/sh/cloudt.sh
-chmod +x cloudt.sh
-./cloudt.sh
-
-mkdir /D/cloudt
-sed -i "s/\/etc\/cloudtorrent\/downloads/\/D\/cloudt/g" /etc/cloudtorrent/cloud-torrent.json
-sed -i "s/\"EnableUpload\": true,/\"EnableUpload\": false,/g" /etc/cloudtorrent/cloud-torrent.json
-
-echo "/etc/cloudtorrent/cloud-torrent -p 8000 -l -a ct:passwd -c /etc/cloudtorrent/cloud-torrent.json>> /etc/cloudtorrent/ct.log 2>&1 &" >> /etc/rc.d/rc.local
-chmod +x /etc/rc.d/rc.local
-
-iptables -I INPUT -p tcp --dport 8000 -j ACCEPT
-firewall-cmd --zone=public --add-port=8000/tcp --permanent
-
 # 重启
+echo "Setup completed successfully"
 echo "reboot"
 reboot
