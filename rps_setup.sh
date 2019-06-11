@@ -2,24 +2,24 @@
 
 cd /root
 
-# ¹Ø±Õ¡°ÄúÔÚ /var/spool/mail/root ÖĞÓĞĞÂÓÊ¼ş¡±ÌáÊ¾
+# å…³é—­â€œæ‚¨åœ¨ /var/spool/mail/root ä¸­æœ‰æ–°é‚®ä»¶â€æç¤º
 echo "unset MAILCHECK">> /etc/profile
 source /etc/profile
 cat /dev/null > /var/spool/mail/root
 
-# ÉèÖÃyum»º´æ
+# è®¾ç½®yumç¼“å­˜
 sed -i "s/keepcache=0/keepcache=1/" /etc/yum.conf
 echo "yum cachedir = /var/cache/yum"
 rm /var/cache/yum/* -rf
 
-# °²×°epel
+# å®‰è£…epel
 yum install -y epel-release
 
 sed -i "s/^#baseurl/baseurl/" /etc/yum.repos.d/epel.repo
 sed -i "s/^metalink/#metalink/" /etc/yum.repos.d/epel.repo
 yum install -y xz
 
-# ¹ÒÔØDÅÌ
+# æŒ‚è½½Dç›˜
 yum install -y ntfs-3g
 
 mkdir /D && mount /dev/sdb1 /D
@@ -28,7 +28,7 @@ cat >> /etc/fstab <<EOF
 /dev/sdb1 /D
 EOF
 
-# °²×°OpenConnect
+# å®‰è£…OpenConnect
 wget https://raw.githubusercontent.com/god4/ocserv/master/install_script.sh
 sed -i "s/reboot/#reboot/" install_script.sh
 sed -i "s/echo '#reboot'/echo 'completed'/" install_script.sh
@@ -37,7 +37,7 @@ chmod +x install_script.sh
 ./install_script.sh
 mv install_script.sh anyconnect/
 
-# ÅäÖÃApache httpd
+# é…ç½®Apache httpd
 yum install -y perl-CGI
 
 mkdir /D/www
@@ -63,7 +63,7 @@ service httpd start
 iptables -I INPUT -p tcp --dport 80 -j ACCEPT
 firewall-cmd --zone=public --add-port=80/tcp --permanent
 
-# °²×°Cloud Torrent
+# å®‰è£…Cloud Torrent
 wget -N --no-check-certificate https://www.xuanlove.download/sh/cloudt.sh
 chmod +x cloudt.sh
 ./cloudt.sh
@@ -78,6 +78,6 @@ chmod +x /etc/rc.d/rc.local
 iptables -I INPUT -p tcp --dport 8000 -j ACCEPT
 firewall-cmd --zone=public --add-port=8000/tcp --permanent
 
-# ÖØÆô
+# é‡å¯
 echo "reboot"
 reboot
