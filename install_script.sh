@@ -76,7 +76,7 @@ function centos0_pre(){
 	yum install -y yum-utils
 	# 防止后面出现“发现 22 个已存在的 RPM 数据库问题”错误
 	package-cleanup --cleandupes
-	# 有的系统上没有安装iptables
+	# 有的系统上没有安装iptables-services
 	yum install -y iptables-services
 }
 
