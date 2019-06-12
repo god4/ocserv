@@ -8,7 +8,7 @@ source /etc/profile
 cat /dev/null > /var/spool/mail/root
 
 # 设置yum缓存
-sed -i "s/keepcache=0/keepcache=1/" /etc/yum.conf
+sed -i "s/keepcache=0/keepcache=1/g" /etc/yum.conf
 echo "yum cachedir = /var/cache/yum"
 rm /var/cache/yum/* -rf
 
@@ -47,6 +47,9 @@ firewall-cmd --zone=public --add-port=8000/tcp --permanent
 # 安装OpenConnect
 echo "installing OpenConnect"
 wget https://raw.githubusercontent.com/god4/ocserv/master/install_script.sh
+sed -i "s/Test CA/test/g" install_script.sh
+sed -i "s/Test Org/test/g" install_script.sh
+sed -i "s/3650/1825/g" install_script.sh
 sed -i "s/reboot/#reboot/" install_script.sh
 sed -i "s/echo '#reboot'/echo 'completed'/" install_script.sh
 
